@@ -42,7 +42,7 @@ jobs:
 
       - name: Build
         run: |
-          cmake --build build --config ${{matrix.build_type}} --verbose
+          cmake --build build --config ${{matrix.build_type}} --parallel 2 --verbose
         timeout-minutes: 20
 
       - name: Package Components Separately
@@ -150,17 +150,19 @@ jobs:
 
       - name: Download artifacts
         uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
 
       - name: Display structure of downloaded files
-        run: ls -R
+        run: ls -R ./artifacts
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            mcp-server-ubuntu-22.04/MCPPlugin-server.zip
-            mcp-plugins-ubuntu-22.04/MCPPlugin-plugins.zip
-            mcp-server-windows-2022/MCPPlugin-server.zip
-            mcp-plugins-windows-2022/MCPPlugin-plugins.zip
+            ./artifacts/mcp-server-ubuntu-22.04/MCPPlugin-server.zip
+            ./artifacts/mcp-plugins-ubuntu-22.04/MCPPlugin-plugins.zip
+            ./artifacts/mcp-server-windows-2022/MCPPlugin-server.zip
+            ./artifacts/mcp-plugins-windows-2022/MCPPlugin-plugins.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
