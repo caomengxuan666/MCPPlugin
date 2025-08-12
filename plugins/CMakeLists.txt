@@ -1,4 +1,3 @@
-
 function(configure_plugin plugin_name src_files)
     set(extra_args ${ARGN})
     list(LENGTH extra_args extra_args_count)
@@ -41,29 +40,15 @@ function(configure_plugin plugin_name src_files)
 
     if(EXISTS ${json_source_file})
         # Create configs directory if not exists
-        file(MAKE_DIRECTORY ${CONFIGS_OUTPUT_DIR})
+        file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/configs)
 
-        configure_file(
-            ${json_source_file}
-            ${CONFIGS_OUTPUT_DIR}/${json_target_file}
-            COPYONLY
-        )
-
-        # build when the plugin is built
-        add_custom_command(
-            OUTPUT ${CONFIGS_OUTPUT_DIR}/${json_target_file}
+        # Use file(COPY) with RENAME for better cross-platform compatibility
+        add_custom_command(TARGET ${plugin_name} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${json_source_file}
-            ${CONFIGS_OUTPUT_DIR}/${json_target_file}
-            DEPENDS ${json_source_file}
+            ${CMAKE_BINARY_DIR}/configs/${json_target_file}
             COMMENT "Copying ${plugin_name} tools.json file to configs directory"
         )
-
-        add_custom_target(${plugin_name}_json ALL
-            DEPENDS ${CONFIGS_OUTPUT_DIR}/${json_target_file}
-        )
-
-        add_dependencies(${plugin_name} ${plugin_name}_json)
 
         # Install configs to bin/configs (always install configs)
         install(FILES ${json_source_file}

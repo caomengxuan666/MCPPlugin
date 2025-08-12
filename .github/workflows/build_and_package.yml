@@ -45,7 +45,7 @@ jobs:
           cmake --build build --config ${{matrix.build_type}} --verbose
         timeout-minutes: 20
 
-      - name: Package All Components
+      - name: Package Components Separately
         run: |
           cd build
           cpack -G ZIP
@@ -56,12 +56,41 @@ jobs:
           ls -la build/
         shell: bash
 
+      - name: Extract components from monolithic package
+        run: |
+          cd build
+          # 创建临时目录用于解压
+          mkdir temp_server temp_plugins
+          
+          # 解压完整包到两个不同的目录
+          unzip -q MCPPlugin-1.0.0-win64-Runtime.zip -d temp_server
+          unzip -q MCPPlugin-1.0.0-win64-Runtime.zip -d temp_plugins
+          
+          # 删除服务器包中插件相关文件
+          rm -rf temp_server/bin/plugins
+          rm -rf temp_server/bin/configs
+          
+          # 删除插件包中服务器相关文件
+          rm -rf temp_plugins/bin/PluginServer.exe
+          rm -rf temp_plugins/bin/plugin_ctl.exe
+          
+          # 重新打包
+          cd temp_server
+          zip -r ../MCPPlugin-server.zip .
+          cd ../temp_plugins
+          zip -r ../MCPPlugin-plugins.zip .
+          
+          # 清理临时目录
+          cd ..
+          rm -rf temp_server temp_plugins
+        shell: bash
+
       - name: Upload Server Package
         uses: actions/upload-artifact@v4
         with:
           name: mcp-server-${{ matrix.os }}
           path: |
-            build/*server.zip
+            build/MCPPlugin-server.zip
           if-no-files-found: error
         timeout-minutes: 5
 
@@ -70,7 +99,7 @@ jobs:
         with:
           name: mcp-plugins-${{ matrix.os }}
           path: |
-            build/*plugins.zip
+            build/MCPPlugin-plugins.zip
           if-no-files-found: error
         timeout-minutes: 5
 
@@ -95,7 +124,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            */*server*.zip
-            */*plugins*.zip
+            */MCPPlugin-server.zip
+            */MCPPlugin-plugins.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

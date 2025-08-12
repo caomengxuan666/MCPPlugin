@@ -5,4 +5,5 @@ add_custom_command(TARGET plugin_ctl POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     $<TARGET_FILE:plugin_ctl>
     ${PROJECT_SOURCE_DIR}/plugins/
+    COMMAND_EXPAND_LISTS
 )
