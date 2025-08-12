@@ -1,0 +1,1 @@
+add_library(mcp_core executable_path.cpp)

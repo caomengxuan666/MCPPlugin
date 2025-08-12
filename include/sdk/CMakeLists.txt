@@ -1,0 +1,1 @@
+add_library(mcp_plugin_sdk tool_info_parser.cpp)

@@ -1,0 +1,1 @@
+configure_plugin(example_plugin example_plugin.cpp)

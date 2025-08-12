@@ -1,0 +1,33 @@
+{
+  "tools": [
+    {
+      "name": "example_plugin",
+      "description": "Description of example_plugin",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "param1": {
+            "type": "string",
+            "description": "An example parameter"
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "name": "stream_example_plugin",
+      "description": "Stream data from example_plugin",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "param1": {
+            "type": "string",
+            "description": "An example parameter"
+          }
+        },
+        "required": []
+      },
+      "is_streaming": true
+    }
+  ]
+}
