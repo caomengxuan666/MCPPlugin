@@ -60,28 +60,20 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           cd build
-          # 创建临时目录用于解压
           mkdir temp_server temp_plugins
-          
-          # 解压完整包到两个不同的目录
           unzip -q MCPPlugin-1.0.0-Linux-Runtime.zip -d temp_server
           unzip -q MCPPlugin-1.0.0-Linux-Runtime.zip -d temp_plugins
-          
-          # 删除服务器包中插件相关文件
+
           rm -rf temp_server/bin/plugins
           rm -rf temp_server/bin/configs
-          
-          # 删除插件包中服务器相关文件
           find temp_plugins -name "PluginServer" -delete
           find temp_plugins -name "plugin_ctl" -delete
-          
-          # 重新打包
+
           cd temp_server
-          zip -r ../MCPPlugin-server.zip .
+          zip -r ../MCPPlugin-server-linux.zip .
           cd ../temp_plugins
-          zip -r ../MCPPlugin-plugins.zip .
-          
-          # 清理临时目录
+          zip -r ../MCPPlugin-plugins-linux.zip .
+
           cd ..
           rm -rf temp_server temp_plugins
         shell: bash
@@ -90,31 +82,24 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           cd build
-          # PowerShell版本的组件分离
-          # 创建临时目录用于解压
           mkdir temp_server
           mkdir temp_plugins
-          
-          # 解压完整包到两个不同的目录
+
           Expand-Archive -Path "MCPPlugin-1.0.0-win64-Runtime.zip" -DestinationPath "temp_server" -Force
           Expand-Archive -Path "MCPPlugin-1.0.0-win64-Runtime.zip" -DestinationPath "temp_plugins" -Force
-          
-          # 删除服务器包中插件相关文件
+
           if (Test-Path "temp_server\bin\plugins") {
             Remove-Item -Recurse -Force "temp_server\bin\plugins"
           }
           if (Test-Path "temp_server\bin\configs") {
             Remove-Item -Recurse -Force "temp_server\bin\configs"
           }
-          
-          # 删除插件包中服务器相关文件
+
           Get-ChildItem -Path "temp_plugins" -Include "PluginServer.exe","plugin_ctl.exe" -Recurse | Remove-Item -Force
-          
-          # 重新打包
-          Compress-Archive -Path "temp_server\*" -DestinationPath "MCPPlugin-server.zip" -Force
-          Compress-Archive -Path "temp_plugins\*" -DestinationPath "MCPPlugin-plugins.zip" -Force
-          
-          # 清理临时目录
+
+          Compress-Archive -Path "temp_server\*" -DestinationPath "MCPPlugin-server-windows.zip" -Force
+          Compress-Archive -Path "temp_plugins\*" -DestinationPath "MCPPlugin-plugins-windows.zip" -Force
+
           Remove-Item -Recurse -Force temp_server
           Remove-Item -Recurse -Force temp_plugins
         shell: powershell
@@ -123,8 +108,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mcp-server-${{ matrix.os }}
-          path: |
-            build/MCPPlugin-server.zip
+          path: build/MCPPlugin-server-*.zip
           if-no-files-found: error
         timeout-minutes: 5
 
@@ -132,8 +116,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mcp-plugins-${{ matrix.os }}
-          path: |
-            build/MCPPlugin-plugins.zip
+          path: build/MCPPlugin-plugins-*.zip
           if-no-files-found: error
         timeout-minutes: 5
 
@@ -151,18 +134,32 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          path: ./artifacts
+          path: artifacts
+          pattern: "*.zip"
+          merge-multiple: true
 
-      - name: Display structure of downloaded files
-        run: ls -R ./artifacts
+      - name: Rename artifacts for release
+        run: |
+          cd artifacts
+          for file in *; do
+            if [[ "$file" == *"ubuntu-22.04"* ]]; then
+              new_name="${file/ubuntu-22.04/linux}"
+              mv "$file" "$new_name"
+            elif [[ "$file" == *"windows-2022"* ]]; then
+              new_name="${file/windows-2022/windows}"
+              mv "$file" "$new_name"
+            fi
+          done
+          ls -la
+        shell: bash
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ./artifacts/mcp-server-ubuntu-22.04/MCPPlugin-server.zip
-            ./artifacts/mcp-plugins-ubuntu-22.04/MCPPlugin-plugins.zip
-            ./artifacts/mcp-server-windows-2022/MCPPlugin-server.zip
-            ./artifacts/mcp-plugins-windows-2022/MCPPlugin-plugins.zip
+            artifacts/mcp-server-linux
+            artifacts/mcp-plugins-linux
+            artifacts/mcp-server-windows
+            artifacts/mcp-plugins-windows
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
