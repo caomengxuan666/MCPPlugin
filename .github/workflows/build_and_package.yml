@@ -26,7 +26,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake rpm dpkg
+          sudo apt-get install -y build-essential cmake rpm dpkg zip
         timeout-minutes: 5
 
       - name: Install NSIS (Windows)
@@ -56,23 +56,24 @@ jobs:
           ls -la build/
         shell: bash
 
-      - name: Extract components from monolithic package
+      - name: Extract components from monolithic package (Linux)
+        if: runner.os == 'Linux'
         run: |
           cd build
           # 创建临时目录用于解压
           mkdir temp_server temp_plugins
           
           # 解压完整包到两个不同的目录
-          unzip -q MCPPlugin-1.0.0-win64-Runtime.zip -d temp_server
-          unzip -q MCPPlugin-1.0.0-win64-Runtime.zip -d temp_plugins
+          unzip -q MCPPlugin-1.0.0-Linux-Runtime.zip -d temp_server
+          unzip -q MCPPlugin-1.0.0-Linux-Runtime.zip -d temp_plugins
           
           # 删除服务器包中插件相关文件
           rm -rf temp_server/bin/plugins
           rm -rf temp_server/bin/configs
           
           # 删除插件包中服务器相关文件
-          rm -rf temp_plugins/bin/PluginServer.exe
-          rm -rf temp_plugins/bin/plugin_ctl.exe
+          find temp_plugins -name "PluginServer" -delete
+          find temp_plugins -name "plugin_ctl" -delete
           
           # 重新打包
           cd temp_server
@@ -84,6 +85,39 @@ jobs:
           cd ..
           rm -rf temp_server temp_plugins
         shell: bash
+
+      - name: Extract components from monolithic package (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cd build
+          # PowerShell版本的组件分离
+          # 创建临时目录用于解压
+          mkdir temp_server
+          mkdir temp_plugins
+          
+          # 解压完整包到两个不同的目录
+          Expand-Archive -Path "MCPPlugin-1.0.0-win64-Runtime.zip" -DestinationPath "temp_server" -Force
+          Expand-Archive -Path "MCPPlugin-1.0.0-win64-Runtime.zip" -DestinationPath "temp_plugins" -Force
+          
+          # 删除服务器包中插件相关文件
+          if (Test-Path "temp_server\bin\plugins") {
+            Remove-Item -Recurse -Force "temp_server\bin\plugins"
+          }
+          if (Test-Path "temp_server\bin\configs") {
+            Remove-Item -Recurse -Force "temp_server\bin\configs"
+          }
+          
+          # 删除插件包中服务器相关文件
+          Get-ChildItem -Path "temp_plugins" -Include "PluginServer.exe","plugin_ctl.exe" -Recurse | Remove-Item -Force
+          
+          # 重新打包
+          Compress-Archive -Path "temp_server\*" -DestinationPath "MCPPlugin-server.zip" -Force
+          Compress-Archive -Path "temp_plugins\*" -DestinationPath "MCPPlugin-plugins.zip" -Force
+          
+          # 清理临时目录
+          Remove-Item -Recurse -Force temp_server
+          Remove-Item -Recurse -Force temp_plugins
+        shell: powershell
 
       - name: Upload Server Package
         uses: actions/upload-artifact@v4

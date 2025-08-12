@@ -7,3 +7,9 @@ add_custom_command(TARGET plugin_ctl POST_BUILD
     ${PROJECT_SOURCE_DIR}/plugins/
     COMMAND_EXPAND_LISTS
 )
+
+# 安装plugin_ctl到bin目录
+install(TARGETS plugin_ctl
+    RUNTIME DESTINATION bin
+    COMPONENT server
+)
