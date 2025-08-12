@@ -158,7 +158,9 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            */MCPPlugin-server.zip
-            */MCPPlugin-plugins.zip
+            mcp-server-ubuntu-22.04/MCPPlugin-server.zip
+            mcp-plugins-ubuntu-22.04/MCPPlugin-plugins.zip
+            mcp-server-windows-2022/MCPPlugin-server.zip
+            mcp-plugins-windows-2022/MCPPlugin-plugins.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
