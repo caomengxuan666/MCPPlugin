@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
 
     auto &pluginManager = PluginManager::getInstance();
 
-    const std::string hardcoded_repo_url = "https://github.com/caomengxuan666/MCPPrelugin.git";
+    const std::string hardcoded_repo_url = "https://github.com/caomengxuan666/MCPPlugin.git";
     pluginManager.setSelfRepoURL(hardcoded_repo_url);
     std::cout << "Self repository URL (hardcoded): " << hardcoded_repo_url << std::endl;
     std::thread serverThread([&pluginManager, port]() {

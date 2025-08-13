@@ -1,3 +1,8 @@
 .cache/
 build/
 *.exe
+.vscode
+out/
+cmake-build-debug/
+.idea/
+cmake-build-release/
