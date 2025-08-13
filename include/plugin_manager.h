@@ -1,18 +1,24 @@
-#pragma once
+#ifndef PLUGIN_MANAGER_H
+#define PLUGIN_MANAGER_H
 
+#define CPPHTTPLIB_OPENSSL_SUPPORT
+#include "env_manager.h"
 #include "mcp_plugin.h"
 #include <httplib.h>
+#include <map>
 #include <mutex>
+#include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
 #include <thread>
 #include <vector>
 
-// Platform type enumeration
+#include "env_manager.h"
+
 enum class Platform {
+    Unknown,
     Windows,
-    Linux,
-    Unknown
+    Linux
 };
 
 // Release asset information (by platform)
@@ -75,9 +81,17 @@ private:
 
     // (Original private functions unchanged)
     std::pair<std::string, std::string> parseGitHubURL(const std::string &url) const;
+
+    std::string readVersionFileUnsafe() const;
+
     bool downloadRelease(const std::string &owner, const std::string &repo, const std::string &save_path);
     bool parsePluginManifest(const std::string &plugin_path, PluginInfo &plugin_info);
+    std::string readVersionFile() const;
+    void writeVersionFile(const std::string &version) const;
+    bool isNewerVersion(const std::string &new_tag, const std::string &current_tag) const;
     void savePlugins() const;
+    void saveReleaseInfo(const ReleaseInfo &release) const;
+    std::optional<ReleaseInfo> loadReleaseInfo() const;
     void loadPlugins();
 
     // New: Core functionality implementation
@@ -86,6 +100,9 @@ private:
     std::optional<ReleaseInfo> fetchLatestRelease();              // Get latest release (with platform distinction)
     bool downloadReleaseAsset(const ReleaseAsset &asset);         // Download single asset to local
     Platform getPlatformFromFileName(const std::string &filename);// Determine platform from filename
+    // Helper function to set up HTTP client with authentication
+    template<typename ClientType>
+    void setupHttpClient(ClientType &cli) const;
 
     httplib::Server srv_;
     std::vector<PluginInfo> plugins_;
@@ -99,4 +116,25 @@ private:
     ReleaseInfo latest_release_info_;                   // Cache latest release info
     const std::string update_dir_ = "updates/";         // Local storage directory
     std::map<std::string, ReleaseInfo> release_history_;// key: version tag（etc. v1.0.0）
+    std::string version_file_ = "latest_version.txt";
+    const std::string release_info_file_ = "release_info.json";// Local release info file
+    std::string current_version_;
 };
+
+// Template implementation for setupHttpClient
+template<typename ClientType>
+void PluginManager::setupHttpClient(ClientType &cli) const {
+    cli.set_default_headers({{"User-Agent", "MCPPluginServer"},
+                             {"Accept", "application/vnd.github.v3+json"}});
+
+    cli.set_connection_timeout(30);
+
+    auto &envManager = EnvManager::getInstance();
+    auto token = envManager.get("GITHUB_TOKEN");// 返回 optional<string>
+
+    if (token.has_value() && !token.value().empty()) {
+        cli.set_bearer_token_auth(token.value().c_str());
+    }
+}
+
+#endif// PLUGIN_MANAGER_H

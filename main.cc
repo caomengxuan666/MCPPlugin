@@ -1,4 +1,5 @@
 #include "plugin_manager.h"
+#include "env_manager.h"
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -6,6 +7,14 @@
 int main(int argc, char *argv[]) {
     int port = 6680;
     std::string self_repo_url = "";
+
+    // Load environment variables from .env file
+    auto& envManager = EnvManager::getInstance();
+    if (envManager.loadFromFile()) {
+        std::cout << "✅ Environment file loaded successfully" << std::endl;
+    } else {
+        std::cout << "⚠️  No environment file found or failed to load" << std::endl;
+    }
 
     for (int i = 1; i < argc; i++) {
         std::string arg = argv[i];

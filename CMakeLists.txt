@@ -21,6 +21,7 @@ set(CONFIGS_OUTPUT_DIR ${CMAKE_BINARY_DIR}/configs)
 include_directories(include)
 include_directories(include/sdk)
 include_directories(src)
+include(FindMCPOpenSSL.cmake)
 
 # msvc utf-8
 if(MSVC)
@@ -34,12 +35,13 @@ endif()
 set(SOURCES
     main.cc
     src/plugin_manager.cpp
+    src/env_manager.cpp
 )
 
 add_executable(PluginServer ${SOURCES})
 
 find_package(Threads REQUIRED)
-target_link_libraries(PluginServer Threads::Threads)
+target_link_libraries(PluginServer Threads::Threads MCP::OpenSSL)
 
 # Add subdirectories
 add_subdirectory(protocol)
@@ -50,6 +52,16 @@ add_subdirectory(tools)
 
 # Link libraries
 target_link_libraries(PluginServer mcp_core mcp_plugin_sdk)
+
+# if there is a .env file,copy it to the bin directory
+if(EXISTS ${CMAKE_SOURCE_DIR}/.env)
+    add_custom_command(TARGET PluginServer POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/.env ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+    )
+endif()
+
+# copy .env.example to the bin directory
+file(COPY ${CMAKE_SOURCE_DIR}/.env.example DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
 if(WIN32)
     target_link_libraries(PluginServer wsock32 ws2_32)
