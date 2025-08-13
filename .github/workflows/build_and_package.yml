@@ -135,8 +135,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-          pattern: "*.zip"
-          merge-multiple: true
 
       - name: Rename artifacts for release
         run: |
