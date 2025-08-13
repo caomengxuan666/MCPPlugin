@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
         ofs << "    try {\n";
         ofs << "        // Load tool information if not already loaded\n";
         ofs << "        if (g_tools.empty()) {\n";
-        ofs << "            g_tools = ToolInfoParser::loadFromFile(\"tools.json\");\n";
+        ofs << "            g_tools = ToolInfoParser::loadFromFile(\"" << argv[1] << "_tools.json\");\n";
         ofs << "        }\n\n";
         ofs << "        *count = static_cast<int>(g_tools.size());\n";
         ofs << "        return g_tools.data();\n";
