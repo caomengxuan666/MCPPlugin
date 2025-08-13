@@ -1,4 +1,3 @@
 add_library(mcp_plugin_sdk tool_info_parser.cpp)
 
-# 设置POSITION_INDEPENDENT_CODE属性，以支持在共享库中使用
 set_property(TARGET mcp_plugin_sdk PROPERTY POSITION_INDEPENDENT_CODE ON)

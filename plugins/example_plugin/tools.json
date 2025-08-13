@@ -15,19 +15,22 @@
       }
     },
     {
-      "name": "stream_example_plugin",
-      "description": "Stream data from example_plugin",
+      "name": "fetch_github_repo",
+      "description": "Fetch GitHub repository release information",
       "parameters": {
         "type": "object",
         "properties": {
-          "param1": {
+          "owner": {
             "type": "string",
-            "description": "An example parameter"
+            "description": "Repository owner (default: caomengxuan666)"
+          },
+          "repo": {
+            "type": "string",
+            "description": "Repository name (default: MCPServer.cpp)"
           }
         },
         "required": []
-      },
-      "is_streaming": true
+      }
     }
   ]
 }

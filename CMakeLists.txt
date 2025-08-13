@@ -1,15 +1,21 @@
 cmake_minimum_required(VERSION 3.10)
-project(PluginServer VERSION 0.1.0.5 LANGUAGES CXX)
+project(PluginServer VERSION 0.1.0.6 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 设置输出目录
+# Set output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-# 设置配置文件输出目录
+# Set plugin output directories
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin)
+
+# Set config file output directory
 set(CONFIGS_OUTPUT_DIR ${CMAKE_BINARY_DIR}/configs)
 
 include_directories(include)
@@ -24,7 +30,7 @@ if(MSVC)
     add_definitions(-DNOMINMAX)
 endif()
 
-# 添加源文件
+# Add source files
 set(SOURCES
     main.cc
     src/plugin_manager.cpp
@@ -35,14 +41,14 @@ add_executable(PluginServer ${SOURCES})
 find_package(Threads REQUIRED)
 target_link_libraries(PluginServer Threads::Threads)
 
-# 添加子目录
+# Add subdirectories
 add_subdirectory(protocol)
 add_subdirectory(include/core)
 add_subdirectory(include/sdk)
 add_subdirectory(plugins)
 add_subdirectory(tools)
 
-# 链接库
+# Link libraries
 target_link_libraries(PluginServer mcp_core mcp_plugin_sdk)
 
 if(WIN32)
@@ -59,7 +65,7 @@ install(TARGETS plugin_ctl
     COMPONENT server
 )
 
-# 安装配置文件目录
+# Install config directory
 install(DIRECTORY ${CONFIGS_OUTPUT_DIR}/
     DESTINATION bin/configs
     COMPONENT plugins

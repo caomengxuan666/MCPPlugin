@@ -58,26 +58,32 @@ function(configure_plugin plugin_name src_files)
         )
     endif()
 
-    # 安装插件动态库文件
-    install(TARGETS ${plugin_name}
-        RUNTIME DESTINATION bin/plugins
-        LIBRARY DESTINATION bin/plugins
-        COMPONENT plugins
-    )
+    # Install plugin dynamic library files
+    if(WIN32)
+        install(TARGETS ${plugin_name}
+            RUNTIME DESTINATION bin/plugins
+            COMPONENT plugins
+        )
+    else()
+        install(TARGETS ${plugin_name}
+            LIBRARY DESTINATION bin/plugins
+            COMPONENT plugins
+        )
+    endif()
 endfunction()
 
-# list all the directories and addsubdirectories to the project
+# List all the directories and add subdirectories to the project
 function(add_subdirectories_to_project)
-    # 获取当前目录下的所有条目（文件和目录）
+    # Get all entries (files and directories) in the current directory
     file(GLOB all_entries RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *)
 
     foreach(entry ${all_entries})
-        # 拼接完整路径
+        # Concatenate full path
         set(full_path "${CMAKE_CURRENT_SOURCE_DIR}/${entry}")
 
-        # 仅处理存在的目录，且排除文件
+        # Process only existing directories, excluding files
         if(IS_DIRECTORY "${full_path}" AND NOT entry MATCHES "^\\.")
-            # 排除 build 目录和 CMakeLists.txt（如果误判）
+            # Exclude build directory and CMakeLists.txt (if misjudged)
             if(NOT entry STREQUAL "build" AND NOT entry STREQUAL "CMakeLists.txt")
                 add_subdirectory(${entry})
                 message(STATUS "Added subdirectory: ${entry}")
@@ -85,7 +91,7 @@ function(add_subdirectories_to_project)
                 message(STATUS "Skipped directory: ${entry}")
             endif()
         else()
-            # 打印被跳过的文件（方便调试）
+            # Print skipped files (for debugging)
             message(STATUS "Skipped non-directory: ${entry}")
         endif()
     endforeach()

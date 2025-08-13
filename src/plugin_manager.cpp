@@ -353,12 +353,10 @@ void PluginManager::loadPlugins() {
                     for (const auto &tool_json: plugin_json["tools"]) {
                         ToolInfo tool;
 
-                        // 存储字符串以便 ToolInfo 中的 const char* 字段可以引用
                         plugin.tool_names.push_back(tool_json.value("name", std::string("")));
                         plugin.tool_descriptions.push_back(tool_json.value("description", std::string("")));
                         plugin.tool_parameters.push_back(tool_json.value("parameters", std::string("")));
 
-                        // 现在可以安全地使用 c_str()，因为字符串存储在 plugin 对象中
                         tool.name = plugin.tool_names.back().c_str();
                         tool.description = plugin.tool_descriptions.back().c_str();
                         tool.parameters = plugin.tool_parameters.back().c_str();

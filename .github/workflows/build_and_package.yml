@@ -3,9 +3,9 @@ name: Build and Package
 on:
   push:
     branches: [main, master]
-    tags: ["v*"] # 仅在推送 tag 时触发 Release
+    tags: ["v*"]
   pull_request:
-    branches: [main, master] # PR 时仅执行打包，不发布
+    branches: [main, master]
 
 jobs:
   package:
@@ -14,161 +14,161 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, windows-2022] # 支持的操作系统
-        build_type: [Release] # 构建类型
+        os: [ubuntu-22.04, windows-2022]
+        build_type: [Release]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          submodules: "recursive" # 拉取子模块
+          submodules: "recursive"
 
-      # Linux 依赖安装
+      # Install Linux dependencies
       - name: Install dependencies (Ubuntu)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake zip  # 仅保留必要依赖
+          sudo apt-get install -y build-essential cmake zip
         timeout-minutes: 5
 
-      # Windows 依赖安装（NSIS 可选，此处未用到）
+      # Install Windows dependencies
       - name: Install tools (Windows)
         if: runner.os == 'Windows'
         run: |
-          choco install cmake zip  # 确保 zip 可用
+          choco install cmake zip
         timeout-minutes: 5
 
-      # 配置 CMake
+      # Configure CMake
       - name: Configure CMake
         run: |
           cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} --log-level=VERBOSE
         timeout-minutes: 10
 
-      # 编译项目
+      # Build project
       - name: Build project
         run: |
           cmake --build build --config ${{ matrix.build_type }} --parallel 2 --verbose
         timeout-minutes: 20
 
-      # 生成全量包（后续分离组件用）
+      # Generate monolithic package
       - name: Generate monolithic package
         run: |
           cd build
-          cpack -G ZIP  # 生成基础 ZIP 包
+          cpack -G ZIP
         timeout-minutes: 10
 
-      # 查看生成的包（调试用）
+      # List generated packages
       - name: List generated packages
         run: |
-          ls -la build/  # 确认全量包已生成
+          ls -la build/
         shell: bash
 
-      # Linux 组件分离：从全量包中提取服务器和插件组件
+      # Extract components on Linux
       - name: Extract components (Linux)
         if: runner.os == 'Linux'
         run: |
           cd build
-          # 创建临时目录
+          # Create temporary directories
           mkdir temp_server temp_plugins
 
-          # 解压全量包到临时目录
+          # Extract monolithic package to temporary directories
           unzip -q MCPPlugin-1.0.0-Linux-Runtime.zip -d temp_server
           unzip -q MCPPlugin-1.0.0-Linux-Runtime.zip -d temp_plugins
 
-          # 服务器包：删除插件相关文件
+          # Server package: Remove plugin files
           rm -rf temp_server/bin/plugins temp_server/bin/configs
 
-          # 插件包：删除服务器相关文件
+          # Plugin package: Remove server files
           find temp_plugins -name "PluginServer" -delete
           find temp_plugins -name "plugin_ctl" -delete
 
-          # 重新打包为独立组件包（含平台标识）
+          # Repackage as independent component packages with platform identifier
           cd temp_server && zip -r ../MCPPlugin-server-linux.zip . && cd ..
           cd temp_plugins && zip -r ../MCPPlugin-plugins-linux.zip . && cd ..
 
-          # 清理临时文件
+          # Clean up temporary files
           rm -rf temp_server temp_plugins
 
-          # 验证组件包生成
+          # Verify component packages are generated
           ls -la *.zip
         shell: bash
 
-      # Windows 组件分离：从全量包中提取服务器和插件组件
+      # Extract components on Windows
       - name: Extract components (Windows)
         if: runner.os == 'Windows'
         run: |
           cd build
-          # 创建临时目录
+          # Create temporary directories
           mkdir temp_server, temp_plugins
 
-          # 解压全量包
+          # Extract monolithic package
           Expand-Archive -Path "MCPPlugin-1.0.0-win64-Runtime.zip" -DestinationPath "temp_server" -Force
           Expand-Archive -Path "MCPPlugin-1.0.0-win64-Runtime.zip" -DestinationPath "temp_plugins" -Force
 
-          # 服务器包：删除插件文件
+          # Server package: Remove plugin files
           if (Test-Path "temp_server\bin\plugins") { Remove-Item -Recurse -Force "temp_server\bin\plugins" }
           if (Test-Path "temp_server\bin\configs") { Remove-Item -Recurse -Force "temp_server\bin\configs" }
 
-          # 插件包：删除服务器文件
+          # Plugin package: Remove server files
           Get-ChildItem -Path "temp_plugins" -Include "PluginServer.exe", "plugin_ctl.exe" -Recurse | Remove-Item -Force
 
-          # 重新打包为独立组件包（含平台标识）
+          # Repackage as independent component packages with platform identifier
           Compress-Archive -Path "temp_server\*" -DestinationPath "MCPPlugin-server-windows.zip" -Force
           Compress-Archive -Path "temp_plugins\*" -DestinationPath "MCPPlugin-plugins-windows.zip" -Force
 
-          # 清理临时文件
+          # Clean up temporary files
           Remove-Item -Recurse -Force temp_server, temp_plugins
 
-          # 验证组件包生成
+          # Verify component packages are generated
           Get-ChildItem *.zip
         shell: powershell
 
-      # 上传服务器组件包到 Artifacts
+      # Upload server component package to Artifacts
       - name: Upload server package
         uses: actions/upload-artifact@v4
         with:
-          name: mcp-server-${{ matrix.os }} # Artifacts 名称含平台
-          path: build/MCPPlugin-server-*.zip # 匹配生成的服务器包
-          if-no-files-found: error # 若文件不存在则失败
+          name: mcp-server-${{ matrix.os }}
+          path: build/MCPPlugin-server-*.zip
+          if-no-files-found: error
         timeout-minutes: 5
 
-      # 上传插件组件包到 Artifacts
+      # Upload plugin component package to Artifacts
       - name: Upload plugins package
         uses: actions/upload-artifact@v4
         with:
-          name: mcp-plugins-${{ matrix.os }} # Artifacts 名称含平台
-          path: build/MCPPlugin-plugins-*.zip # 匹配生成的插件包
-          if-no-files-found: error # 若文件不存在则失败
+          name: mcp-plugins-${{ matrix.os }}
+          path: build/MCPPlugin-plugins-*.zip
+          if-no-files-found: error
         timeout-minutes: 5
 
-  # 发布 Release（仅在推送 tag 时执行）
+  # Create Release (only triggered when pushing tags)
   release:
     name: Create GitHub Release
-    needs: [package] # 依赖 package  job 完成
-    if: startsWith(github.ref, 'refs/tags/v') # 仅 tag 推送触发
+    needs: [package]
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-22.04
     permissions:
-      contents: write # 需要发布权限
+      contents: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 下载所有 Artifacts 到本地 artifacts 目录
+      # Download all Artifacts to local artifacts directory
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          path: artifacts # 下载路径：./artifacts
+          path: artifacts
 
-      # 重命名 Artifacts 目录（简化名称，去掉版本号）
+      # Rename Artifacts directories
       - name: Rename artifact directories
         run: |
           cd artifacts
-          # 打印原始目录结构
+          # Print original directory structure
           echo "Original artifact directories:"
           ls -la
 
-          # 重命名 Ubuntu 目录为 linux，Windows 目录为 windows
+          # Rename Ubuntu directory to linux, Windows directory to windows
           for dir in *; do
             if [[ "$dir" == *"ubuntu-22.04"* ]]; then
               new_dir="${dir/ubuntu-22.04/linux}"
@@ -181,24 +181,23 @@ jobs:
             fi
           done
 
-          # 打印重命名后的目录结构（验证）
+          # Print renamed directory structure
           echo "Renamed artifact directories:"
           ls -la
           echo "Files in each directory:"
           ls -R .
         shell: bash
 
-      # 创建 Release 并上传组件包
+      # Create Release and upload component packages
       - name: Create and upload Release
         uses: softprops/action-gh-release@v1
         with:
-          # 明确指定每个组件包的完整路径
           files: |
             artifacts/mcp-server-linux/MCPPlugin-server-linux.zip
             artifacts/mcp-plugins-linux/MCPPlugin-plugins-linux.zip
             artifacts/mcp-server-windows/MCPPlugin-server-windows.zip
             artifacts/mcp-plugins-windows/MCPPlugin-plugins-windows.zip
-          draft: false # 直接发布，不设为草稿
-          prerelease: false # 不设为预发布
+          draft: false
+          prerelease: false
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 自动注入的 token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

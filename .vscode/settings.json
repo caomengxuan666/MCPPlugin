@@ -1,0 +1,12 @@
+{
+  "files.associations": {
+    "*.dbclient-js": "javascript",
+    "*.json": "jsonc",
+    "*.html": "html",
+    "*.qss": "qss",
+    "filesystem": "cpp",
+    "chrono": "cpp",
+    "optional": "cpp",
+    "system_error": "cpp"
+  }
+}
