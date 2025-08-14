@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(PluginServer VERSION 0.1.1.0 LANGUAGES CXX)
+project(PluginServer VERSION 0.1.2.0 LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -36,6 +36,23 @@ set(SOURCES
     main.cc
     src/plugin_manager.cpp
     src/env_manager.cpp
+    src/plugin_repo_manager.cpp
+    protocol/json_rpc.cpp
+    include/sdk/tool_info_parser.cpp
+    include/core/executable_path.cpp
+)
+
+# Add header files for IDEs
+set(HEADERS
+    include/plugin_manager.h
+    include/env_manager.h
+    include/plugin_repo_manager.h
+    include/mcp_plugin.h
+    protocol/tool.h
+    protocol/json_rpc.h
+    include/sdk/tool_info_parser.h
+    include/core/executable_path.h
+    include/core/mcpserver_api.h
 )
 
 add_executable(PluginServer ${SOURCES})
@@ -49,9 +66,11 @@ add_subdirectory(include/core)
 add_subdirectory(include/sdk)
 add_subdirectory(plugins)
 add_subdirectory(tools)
+add_subdirectory(include/miniz)
 
 # Link libraries
-target_link_libraries(PluginServer mcp_core mcp_plugin_sdk)
+target_link_libraries(PluginServer mcp_core mcp_plugin_sdk miniz)
+target_include_directories(PluginServer PRIVATE include/miniz)
 
 # if there is a .env file,copy it to the bin directory
 if(EXISTS ${CMAKE_SOURCE_DIR}/.env)

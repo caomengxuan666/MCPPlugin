@@ -129,6 +129,8 @@ void PluginManager::setupHttpClient(ClientType &cli) const {
 
     cli.set_connection_timeout(30);
 
+    cli.set_follow_location(true);
+
     auto &envManager = EnvManager::getInstance();
     auto token = envManager.get("GITHUB_TOKEN");// 返回 optional<string>
 

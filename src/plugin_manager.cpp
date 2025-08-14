@@ -778,7 +778,6 @@ std::optional<ReleaseInfo> PluginManager::loadReleaseInfo() const {
             return std::nullopt;
         }
 
-        std::cout << "✅ Loaded cached release info: " << release.tag_name << std::endl;
         return release;
     } catch (const std::exception &e) {
         std::cerr << "❌ Failed to parse release info: " << e.what() << std::endl;
